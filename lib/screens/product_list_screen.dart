@@ -24,7 +24,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Future<List<Map<String, dynamic>>> _fetchProducts() async {
     final response = await Supabase.instance.client
         .from('ESTQ_PRODUTO')
-        .select('EPRO_PK, EPRO_DESCRICAO, EPRO_VLR_VAREJO, EPRO_ESTQ_ATUAL')
+        .select('EPRO_PK, EPRO_DESCRICAO, EPRO_VLR_VAREJO, EPRO_ESTQ_ATUAL, EPRO_COD_EAN')
         .order('EPRO_DESCRICAO');
     final list = List<Map<String, dynamic>>.from(response);
     _products = list;
@@ -62,10 +62,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
   void _showProductForm([Map<String, dynamic>? product]) {
     final descController =
         TextEditingController(text: product?['EPRO_DESCRICAO'] ?? '');
-    final priceController = TextEditingController(
-        text: product?['EPRO_VLR_VAREJO']?.toString() ?? '');
-    final stockController = TextEditingController(
-        text: product?['EPRO_ESTQ_ATUAL']?.toString() ?? '');
+    final priceController =
+        TextEditingController(text: product?['EPRO_VLR_VAREJO']?.toString() ?? '');
+    final stockController =
+        TextEditingController(text: product?['EPRO_ESTQ_ATUAL']?.toString() ?? '');
+    final eanController =
+        TextEditingController(text: product?['EPRO_COD_EAN']?.toString() ?? '');
 
     showDialog(
       context: context,
@@ -88,6 +90,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
               decoration: const InputDecoration(labelText: 'Estoque'),
               keyboardType: TextInputType.number,
             ),
+            TextField(
+              controller: eanController,
+              decoration: const InputDecoration(labelText: 'Código EAN'),
+            ),
           ],
         ),
         actions: [
@@ -105,6 +111,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 'EPRO_ESTQ_ATUAL':
                     double.tryParse(stockController.text.replaceAll(',', '.')) ??
                         0,
+                'EPRO_COD_EAN': eanController.text,
               };
               if (product != null) {
                 data['EPRO_PK'] = product['EPRO_PK'];
@@ -195,10 +202,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         priceFormat.format(produto['EPRO_VLR_VAREJO'] ?? 0);
                     final stock =
                         stockFormat.format(produto['EPRO_ESTQ_ATUAL'] ?? 0);
+                    final ean = produto['EPRO_COD_EAN'] ?? '';
                     return ListTile(
                       leading: const Icon(Icons.shopping_cart),
                       title: Text(produto['EPRO_DESCRICAO'] ?? ''),
-                      subtitle: Text('Preço: $price - Estoque: $stock'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('EAN: $ean'),
+                          Text('Preço: $price - Estoque: $stock'),
+                        ],
+                      ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
